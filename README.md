@@ -1,0 +1,2 @@
+# LuckCalendar
+Tracking your luck
