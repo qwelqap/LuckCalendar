@@ -24,29 +24,38 @@ import { Entry, EntryType, Lang, Page } from './types';
 import { TEXT } from './constants';
 import { GlassCard } from './components/GlassCard';
 import { Heatmap } from './components/Heatmap';
-
-// --- Custom Persistence Hook ---
-const useStickyState = <T,>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] => {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const stickyValue = window.localStorage.getItem(key);
-      return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
-    } catch (e) {
-      return defaultValue;
-    }
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue];
-};
+import { 
+  initDB, 
+  getAllEntries, 
+  saveEntry as saveEntryToDB, 
+  deleteEntry, 
+  importEntriesFromJSON 
+} from './indexedDB';
 
 export default function App() {
   const [page, setPage] = useState<Page>(1); 
-  const [entries, setEntries] = useStickyState<Entry[]>([], 'luckcalendar_entries_v2');
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
+
+  // Initialize database and load entries on mount
+  useEffect(() => {
+    const loadEntries = async () => {
+      try {
+        await initDB();
+        const loadedEntries = await getAllEntries();
+        setEntries(loadedEntries);
+      } catch (error) {
+        console.error('Failed to load entries from IndexedDB:', error);
+      } finally {
+        setIsLoadingEntries(false);
+      }
+    };
+
+    loadEntries();
+  }, []);
+
+  // Note: we persist changes directly on add/edit/delete.
 
   useEffect(() => {
     const browserLang = (navigator.language || (navigator as any).userLanguage || '').toLowerCase();
@@ -87,25 +96,29 @@ export default function App() {
     return [...commonBase];
   };
 
-  const exportToJSON = () => {
-    const dataStr = JSON.stringify(entries, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `luckcalendar_export_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    const msg = document.createElement("div");
-    msg.textContent = t('export_msg' as any);
-    msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:12px;z-index:9999;font-weight:bold;backdrop-filter:blur(10px);";
-    document.body.appendChild(msg);
-    setTimeout(() => document.body.removeChild(msg), 1500);
-    setIsSettingsOpen(false);
+  const exportToJSON = async () => {
+    try {
+      const dataStr = JSON.stringify(entries, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `luckcalendar_export_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      const msg = document.createElement("div");
+      msg.textContent = t('export_msg' as any);
+      msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:12px 24px;border-radius:12px;z-index:9999;font-weight:bold;backdrop-filter:blur(10px);";
+      document.body.appendChild(msg);
+      setTimeout(() => document.body.removeChild(msg), 1500);
+      setIsSettingsOpen(false);
+    } catch (error) {
+      console.error('Failed to export data:', error);
+    }
   };
 
   // --- Gesture Handling ---
@@ -159,7 +172,7 @@ export default function App() {
     }
   }, [isModalOpen]);
 
-  const saveEntry = (targetPage: Page | null) => {
+  const saveEntryFromModal = async (targetPage: Page | null) => {
     const actualVal = tempType === 'lucky' ? tempScore : tempType === 'unlucky' ? -tempScore : 0;
     const entryData: Omit<Entry, 'id' | 'date'> = {
         type: tempType || 'neutral',
@@ -171,17 +184,47 @@ export default function App() {
 
     if (editingId) {
       setEntries(prev => prev.map(item => item.id === editingId ? { ...item, ...entryData } : item));
+
+      // Persist updated entry (compute from current state)
+      const updated: Entry | undefined = entries.find(e => e.id === editingId)
+        ? ({ ...(entries.find(e => e.id === editingId) as Entry), ...entryData } as Entry)
+        : undefined;
+
+      if (updated) {
+        try {
+          await saveEntryToDB(updated);
+        } catch (error) {
+          console.error('Failed to save edited entry to IndexedDB:', error);
+        }
+      }
     } else {
-      setEntries([{ id: Date.now(), date: new Date().toISOString(), ...entryData }, ...entries]);
+      const newEntry: Entry = { 
+        id: Date.now(), 
+        date: new Date().toISOString(), 
+        ...entryData 
+      };
+      setEntries([newEntry, ...entries]);
+
+      // Persist new entry
+      try {
+        await saveEntryToDB(newEntry);
+      } catch (error) {
+        console.error('Failed to save new entry to IndexedDB:', error);
+      }
     }
     
     setIsModalOpen(false);
     if (targetPage) setPage(targetPage);
   };
 
-  const confirmDelete = () => { 
+  const confirmDelete = async () => { 
     if (deleteConfirmId) {
-      setEntries(prev => prev.filter(e => e.id !== deleteConfirmId)); 
+      try {
+        await deleteEntry(deleteConfirmId);
+        setEntries(prev => prev.filter(e => e.id !== deleteConfirmId)); 
+      } catch (error) {
+        console.error('Failed to delete entry:', error);
+      }
       setDeleteConfirmId(null); 
     }
   };
@@ -254,11 +297,24 @@ export default function App() {
   }, [currentMonthEntries, entries]);
 
   return (
-    <div className="min-h-screen w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-center p-0 md:p-4">
+    <div className="w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-center p-0 md:p-4" style={{ minHeight: 'calc(var(--app-vh, 1vh) * 100)' }}>
       <div 
         className="w-full md:max-w-md h-[100dvh] md:h-[850px] bg-white md:rounded-[44px] shadow-none md:shadow-2xl border-none md:border-[8px] md:border-slate-900/5 relative overflow-hidden flex flex-col"
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
       >
+        {/* Loading State */}
+        {isLoadingEntries && (
+          <div className="flex-1 flex items-center justify-center bg-slate-50">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-slate-900 animate-spin"></div>
+              <p className="text-sm font-semibold text-slate-400">{t('loading' as any) || 'Loading...'}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Page Content */}
+        {!isLoadingEntries && (
+          <>
         {/* --- Page 1: Input --- */}
         {page === 1 && (
           <div className="flex-1 relative w-full h-full overflow-hidden animate-fade-in bg-slate-50">
@@ -533,13 +589,13 @@ export default function App() {
 
               <div className="flex gap-4">
                 <button 
-                  onClick={() => saveEntry(null)} 
+                  onClick={() => saveEntryFromModal(null)} 
                   className="flex-1 py-5 rounded-[24px] bg-slate-100 text-slate-900 font-black hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   <Save size={20} strokeWidth={3} />
                 </button>
                 <button 
-                  onClick={() => saveEntry(2)} 
+                  onClick={() => saveEntryFromModal(2)} 
                   className="flex-1 py-5 rounded-[24px] bg-slate-100 text-slate-900 font-black hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-slate-100"
                 >
                   <BarChart2 size={20} strokeWidth={3} />
@@ -547,6 +603,8 @@ export default function App() {
               </div>
             </GlassCard>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

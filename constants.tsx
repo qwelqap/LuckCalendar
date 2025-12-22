@@ -24,7 +24,8 @@ export const TEXT = {
     stats_lucky: "好运",
     stats_unlucky: "倒霉",
     stats_net: "净值",
-    mentioned: "提及数"
+    mentioned: "提及数",
+    loading: "正在加载..."
   },
   en: {
     lucky_title: "Lucky",
@@ -48,6 +49,7 @@ export const TEXT = {
     stats_lucky: "Lucky",
     stats_unlucky: "Unlucky",
     stats_net: "Net",
-    mentioned: "Count"
+    mentioned: "Count",
+    loading: "Loading..."
   }
 };
