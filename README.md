@@ -1,2 +1,2 @@
-# LuckCalendar
-Tracking your luck
+<div align="center">
+LuckCalendar
