@@ -18,7 +18,9 @@ export default defineConfig(({ mode }) => {
       build: {
         outDir: 'dist',
         sourcemap: false,
-        minify: 'terser'
-      }
+        minify: 'terser',
+        copyPublicDir: true
+      },
+      publicDir: 'public'
     };
 });
