@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Entry, EntryType, Lang, Page } from './types';
 import { TEXT } from './constants';
+import { ANNOUNCEMENT, ANNOUNCEMENT_SEEN_KEY } from './announcement';
 import { GlassCard } from './components/GlassCard';
 import { Heatmap } from './components/Heatmap';
 import { 
@@ -41,6 +42,57 @@ export default function App() {
   const [lang, setLang] = useState<Lang>('en');
   const [isImmersiveFullscreen, setIsImmersiveFullscreen] = useState(false);
 
+  // --- Announcement ---
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
+
+  // Categories are persisted as stable keys (e.g. "cat_work") so language changes can re-render labels.
+  // Backward compatible: previously saved entries may store translated labels (e.g. "Work" / "工作").
+  const CATEGORY_KEYS = [
+    'cat_work',
+    'cat_study',
+    'cat_life',
+    'cat_social',
+    'cat_surprise',
+    'cat_disaster',
+    'cat_uncategorized'
+  ] as const;
+
+  const isCategoryKey = (v: string): v is (typeof CATEGORY_KEYS)[number] => {
+    return (CATEGORY_KEYS as readonly string[]).includes(v);
+  };
+
+  // Map historical stored labels back to stable keys.
+  const labelToCategoryKey: Record<string, (typeof CATEGORY_KEYS)[number]> = {
+    // English
+    [TEXT.en.cat_work]: 'cat_work',
+    [TEXT.en.cat_study]: 'cat_study',
+    [TEXT.en.cat_life]: 'cat_life',
+    [TEXT.en.cat_social]: 'cat_social',
+    [TEXT.en.cat_surprise]: 'cat_surprise',
+    [TEXT.en.cat_disaster]: 'cat_disaster',
+    [TEXT.en.cat_uncategorized]: 'cat_uncategorized',
+    // Chinese
+    [TEXT.zh.cat_work]: 'cat_work',
+    [TEXT.zh.cat_study]: 'cat_study',
+    [TEXT.zh.cat_life]: 'cat_life',
+    [TEXT.zh.cat_social]: 'cat_social',
+    [TEXT.zh.cat_surprise]: 'cat_surprise',
+    [TEXT.zh.cat_disaster]: 'cat_disaster',
+    [TEXT.zh.cat_uncategorized]: 'cat_uncategorized'
+  };
+
+  const normalizeCategoryToKey = (raw: string | null | undefined): string => {
+    const v = (raw || '').trim();
+    if (!v) return 'cat_uncategorized';
+    if (isCategoryKey(v)) return v;
+    return labelToCategoryKey[v] ?? v;
+  };
+
+  const categoryLabel = (raw: string | null | undefined) => {
+    const normalized = normalizeCategoryToKey(raw);
+    return isCategoryKey(normalized) ? t(normalized as any) : (raw || '');
+  };
+
 
   // Initialize database and load entries on mount
   useEffect(() => {
@@ -48,7 +100,21 @@ export default function App() {
       try {
         await initDB();
         const loadedEntries = await getAllEntries();
-        setEntries(loadedEntries);
+
+        // Migration: convert previously stored translated category labels into stable keys.
+        const migratedEntries = loadedEntries.map(e => {
+          const nextCat = normalizeCategoryToKey(e.category);
+          return nextCat !== e.category ? { ...e, category: nextCat } : e;
+        });
+        setEntries(migratedEntries);
+
+        // Persist migration in background (best effort).
+        const changed = migratedEntries.filter((e, i) => e.category !== loadedEntries[i]?.category);
+        if (changed.length) {
+          Promise.all(changed.map(e => saveEntryToDB(e))).catch(err => {
+            console.warn('Failed to persist category migration:', err);
+          });
+        }
       } catch (error) {
         console.error('Failed to load entries from IndexedDB:', error);
       } finally {
@@ -66,6 +132,29 @@ export default function App() {
     setLang(browserLang.includes('zh') ? 'zh' : 'en');
   }, []);
 
+  // Show announcement once per version (for both web and installed PWA)
+  useEffect(() => {
+    try {
+      const seenVersion = localStorage.getItem(ANNOUNCEMENT_SEEN_KEY);
+      if (seenVersion !== ANNOUNCEMENT.version) {
+        setIsAnnouncementOpen(true);
+      }
+    } catch (e) {
+      // If storage is unavailable (very rare), still show once per session.
+      setIsAnnouncementOpen(true);
+      console.warn('Announcement storage unavailable:', e);
+    }
+  }, []);
+
+  const closeAnnouncement = useCallback(() => {
+    setIsAnnouncementOpen(false);
+    try {
+      localStorage.setItem(ANNOUNCEMENT_SEEN_KEY, ANNOUNCEMENT.version);
+    } catch (e) {
+      console.warn('Failed to persist announcement seen version:', e);
+    }
+  }, []);
+
   // Dynamically adjust theme-color so the installed PWA status bar matches the current page.
   // (Android uses this for status bar tint; iOS standalone mostly relies on apple status bar settings.)
   useEffect(() => {
@@ -74,7 +163,7 @@ export default function App() {
     // Page 1: emerald (home)
     // Page 2/3: iOS-like grouped background
     // NOTE: If this is too bright/dark for some devices, keep it in sync with the outer shell bg.
-    const color = page === 1 ? '#b7edd8' : '#f2f2f7';
+    const color = page === 1 ? '#a5f2ce' : '#f2f2f7';
     meta.setAttribute('content', color);
   }, [page]);
 
@@ -205,7 +294,8 @@ export default function App() {
       setTempType('neutral'); 
       setTempScore(0); 
       setNote(""); 
-      setSelectedCategory(t('cat_life' as any)); 
+      // Store category as key; label is derived from current language.
+      setSelectedCategory('cat_life'); 
       setIsModalOpen(true);
       return;
     }
@@ -243,7 +333,8 @@ export default function App() {
         type: tempType || 'neutral',
         score: tempType === 'neutral' ? 0 : tempScore,
         actualValue: actualVal,
-        category: selectedCategory || t('cat_uncategorized' as any),
+        // Persist as stable key; render with current language later.
+        category: normalizeCategoryToKey(selectedCategory) || 'cat_uncategorized',
         note: note
     };
 
@@ -300,7 +391,7 @@ export default function App() {
     setEditingId(entry.id); 
     setTempType(entry.type); 
     setTempScore(entry.score); 
-    setSelectedCategory(entry.category); 
+    setSelectedCategory(normalizeCategoryToKey(entry.category)); 
     setNote(entry.note); 
     setIsModalOpen(true);
   };
@@ -331,6 +422,15 @@ export default function App() {
     });
   }, [entries]);
 
+  // Ensure any visible/editing category re-renders with language changes.
+  // If the selection is an old translated label, normalize it to the stable key.
+  useEffect(() => {
+    if (!selectedCategory) return;
+    const normalized = normalizeCategoryToKey(selectedCategory);
+    if (normalized !== selectedCategory) setSelectedCategory(normalized);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
   const stats = useMemo(() => {
     const lucky = currentMonthEntries.filter(e => e.type === 'lucky');
     const unlucky = currentMonthEntries.filter(e => e.type === 'unlucky');
@@ -345,11 +445,14 @@ export default function App() {
 
   const insightStats = useMemo(() => {
     const getTopCategory = (list: Entry[]) => {
-        if (!list.length) return { name: "None", count: 0 }; 
+        if (!list.length) return { key: 'cat_uncategorized', count: 0 };
         const counts: Record<string, number> = {};
-        list.forEach(item => { const cat = item.category || "None"; counts[cat] = (counts[cat] || 0) + 1; });
+        list.forEach(item => {
+          const catKey = normalizeCategoryToKey(item.category);
+          counts[catKey] = (counts[catKey] || 0) + 1;
+        });
         const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-        return { name: sorted[0][0], count: sorted[0][1] }; 
+        return { key: sorted[0][0], count: sorted[0][1] };
     };
     const topLucky = getTopCategory(currentMonthEntries.filter(e => e.type === 'lucky'));
     const topUnlucky = getTopCategory(currentMonthEntries.filter(e => e.type === 'unlucky'));
@@ -381,6 +484,48 @@ export default function App() {
         className="w-full md:max-w-md h-[100dvh] md:h-[850px] bg-white md:rounded-[44px] shadow-none md:shadow-2xl border-none md:border-[8px] md:border-slate-900/5 relative overflow-hidden flex flex-col"
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
       >
+        {/* Announcement (shown on app open / home) */}
+        {isAnnouncementOpen && (
+          <div className="absolute inset-0 z-[120] flex items-center justify-center p-6 bg-black/20 backdrop-blur-sm animate-fade-in-up">
+            <GlassCard className="w-full max-w-sm p-8 bg-white/95 shadow-3xl rounded-[40px]">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="min-w-0">
+                  <div className="text-[11px] text-slate-400 font-black uppercase tracking-[0.2em] mb-2">
+                    {new Date(ANNOUNCEMENT.updatedAt).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US')}
+                  </div>
+                  <h3 className="text-2xl font-black tracking-tight text-slate-900 truncate">
+                    {ANNOUNCEMENT.content[lang].title}
+                  </h3>
+                </div>
+                <button
+                  onClick={closeAnnouncement}
+                  className="p-2 text-slate-300 hover:text-slate-700 transition-colors"
+                  aria-label="Close announcement"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                {ANNOUNCEMENT.content[lang].lines.map((line, idx) => (
+                  <p key={idx} className="text-[14px] leading-relaxed text-slate-600 font-semibold">
+                    {line}
+                  </p>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={closeAnnouncement}
+                  className="flex-1 py-4 rounded-[22px] bg-slate-900 text-white font-black hover:bg-slate-800 transition-all active:scale-95"
+                >
+                  {lang === 'zh' ? '我知道了' : 'Got it'}
+                </button>
+              </div>
+            </GlassCard>
+          </div>
+        )}
+
         {/* Loading State */}
         {isLoadingEntries && (
           <div className="flex-1 flex items-center justify-center bg-slate-50">
@@ -465,11 +610,11 @@ export default function App() {
 
             <div className="grid grid-cols-2 gap-2 mb-3">
                 <GlassCard className="p-4 flex flex-col justify-center h-24 bg-gradient-to-br from-white to-emerald-50 border-emerald-50">
-                    <div className="text-lg font-semibold text-emerald-600 leading-tight mb-1 line-clamp-2">{insightStats.topLucky.name}</div>
+                <div className="text-lg font-semibold text-emerald-600 leading-tight mb-1 line-clamp-2">{categoryLabel(insightStats.topLucky.key)}</div>
                     <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">{t('mentioned' as any)}: {insightStats.topLucky.count}</div>
                 </GlassCard>
                  <GlassCard className="p-4 flex flex-col justify-center h-24 bg-gradient-to-br from-white to-rose-50 border-rose-50">
-                    <div className="text-lg font-semibold text-rose-600 leading-tight mb-1 line-clamp-2">{insightStats.topUnlucky.name}</div>
+                <div className="text-lg font-semibold text-rose-600 leading-tight mb-1 line-clamp-2">{categoryLabel(insightStats.topUnlucky.key)}</div>
                      <div className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">{t('mentioned' as any)}: {insightStats.topUnlucky.count}</div>
                 </GlassCard>
             </div>
@@ -536,7 +681,7 @@ export default function App() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-slate-900 text-[16px]">{entry.category}</span>
+                          <span className="font-extrabold text-slate-900 text-[16px]">{categoryLabel(entry.category)}</span>
                         </div>
                         <p className="text-[13px] text-slate-400 mt-1 font-semibold truncate max-w-[160px]">
                           {new Date(entry.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})}
@@ -567,8 +712,15 @@ export default function App() {
         
         {isSettingsOpen && (
           <div className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/10 backdrop-blur-md animate-fade-in">
-             <GlassCard className="w-64 bg-white/95 shadow-3xl rounded-[40px] p-10 flex flex-col items-center gap-8 relative">
-                <button onClick={() => setIsSettingsOpen(false)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-slate-600 transition-colors"><X size={24} /></button>
+             <GlassCard className="w-64 bg-white/95 shadow-3xl rounded-[40px] px-10 pb-10 pt-16 flex flex-col items-center gap-8 relative">
+                {/* Keep close button clear of the top action buttons */}
+                <button
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="absolute top-5 right-5 z-10 p-2 text-slate-300 hover:text-slate-600 transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={24} />
+                </button>
                 <div className="text-center flex flex-col items-center gap-6">
                   <div className="flex items-center gap-4">
                     <button 
@@ -665,8 +817,8 @@ export default function App() {
                       return (
                         <button 
                           key={key} 
-                          onClick={() => setSelectedCategory(label)} 
-                          className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all ${selectedCategory === label ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 active:scale-95'}`}
+                          onClick={() => setSelectedCategory(key)} 
+                          className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all ${selectedCategory === key ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 active:scale-95'}`}
                         >
                           {label}
                         </button>
