@@ -311,7 +311,7 @@ export default function App() {
 
   return (
     <div
-      className="w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-stretch p-0 md:p-4"
+      className="w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-stretch md:items-center p-0 md:p-4"
       style={{
         height: '100dvh',
         minHeight: '100dvh'

@@ -22,7 +22,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #f2f2f7;
+  background-color: #ffffff;
   overscroll-behavior-y: none;
   /* Ensure content extends into status bar */
   position: fixed;
@@ -88,7 +88,7 @@ body {
 }
 
 #root {
-  background-color: #f2f2f7;
+  background-color: #ffffff;
 }
 
 body {
@@ -129,13 +129,6 @@ body {
 @keyframes fade-in-up {
   from {
     opacity: 0;
-
-  /* Remove default safe-area padding/margins and ensure the app can truly bleed edge-to-edge */
-  body {
-    min-height: 100vh;
-  }
-
-  /* Prefer stable dynamic viewport units when available */
     transform: translateY(20px);
   }
   to {

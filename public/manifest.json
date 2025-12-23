@@ -1,6 +1,6 @@
 {
-  "name": "LuckTracker",
-  "short_name": "LuckTracker",
+  "name": "LuckCalendar",
+  "short_name": "LuckCalendar",
   "description": "A luck tracking application",
   "id": "/",
   "start_url": "/",
@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "theme_color": "#10b981",
-  "background_color": "#10b981",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
   "icons": [
     {
       "src": "/icon.svg",
