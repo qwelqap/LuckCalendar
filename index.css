@@ -22,7 +22,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #ffffff;
+  /* Match the app shell background so edge-to-edge areas don't show as black/white strips */
+  background-color: #f2f2f7;
   overscroll-behavior-y: none;
   /* Let the app size naturally; avoid locking the page which can break mobile viewport and scrolling */
   width: 100%;
@@ -85,7 +86,8 @@ body {
 }
 
 #root {
-  background-color: #ffffff;
+  /* Root is always covered by the app shell; keep it in sync with shell bg */
+  background-color: #f2f2f7;
 }
 
 body {
