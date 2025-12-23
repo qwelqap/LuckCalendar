@@ -74,7 +74,7 @@ export default function App() {
     // Page 1: emerald (home)
     // Page 2/3: iOS-like grouped background
     // NOTE: If this is too bright/dark for some devices, keep it in sync with the outer shell bg.
-    const color = page === 1 ? '#10b981' : '#f2f2f7';
+    const color = page === 1 ? '#b7edd8' : '#f2f2f7';
     meta.setAttribute('content', color);
   }, [page]);
 
@@ -437,13 +437,7 @@ export default function App() {
         {/* --- Page 2: Dashboard --- */}
         {page === 2 && (
           <div
-            className="flex-1 min-h-0 flex flex-col p-6 overflow-y-auto z-10 animate-slide-in-right bg-[#f2f2f7] hide-scrollbar pb-32"
-            style={{
-              // Keep only the true safe-area inset so the header sits close to the top.
-              // (Previously we added an extra 1.5rem, which felt too "padded" on mobile.)
-              paddingTop: 'max(env(safe-area-inset-top), 0px)',
-              paddingBottom: 'calc(env(safe-area-inset-bottom) + 8rem)'
-            }}
+            className="flex-1 min-h-0 flex flex-col p-6 pt-[max(env(safe-area-inset-top),0px)] md:pt-6 overflow-y-auto z-10 animate-slide-in-right bg-[#f2f2f7] hide-scrollbar pb-[calc(env(safe-area-inset-bottom)+8rem)]"
           >
             <header className="mb-3 flex items-start">
               <div>
@@ -509,12 +503,7 @@ export default function App() {
         {/* --- Page 3: History --- */}
         {page === 3 && (
           <div
-            className="flex-1 h-full flex flex-col p-6 bg-[#f2f2f7] relative z-10 animate-slide-in-right overflow-hidden"
-            style={{
-              // Same top spacing behavior as Page 2.
-              paddingTop: 'max(env(safe-area-inset-top), 0px)',
-              paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)'
-            }}
+            className="flex-1 h-full flex flex-col p-6 pt-[max(env(safe-area-inset-top),0px)] md:pt-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] bg-[#f2f2f7] relative z-10 animate-slide-in-right overflow-hidden"
           >
              <header className="mb-6 flex justify-between items-end flex-shrink-0">
                <div>
