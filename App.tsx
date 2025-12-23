@@ -18,7 +18,9 @@ import {
   RotateCcw,
   Settings,
   Download,
-  X
+  X,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { Entry, EntryType, Lang, Page } from './types';
 import { TEXT } from './constants';
@@ -37,6 +39,7 @@ export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
+  const [isImmersiveFullscreen, setIsImmersiveFullscreen] = useState(false);
 
   // Initialize database and load entries on mount
   useEffect(() => {
@@ -73,6 +76,55 @@ export default function App() {
     const color = page === 1 ? '#10b981' : '#f2f2f7';
     meta.setAttribute('content', color);
   }, [page]);
+
+  // Track Fullscreen API state ("immersive" fullscreen from a user gesture).
+  useEffect(() => {
+    const update = () => {
+      try {
+        setIsImmersiveFullscreen(!!document.fullscreenElement);
+      } catch {
+        setIsImmersiveFullscreen(false);
+      }
+    };
+
+    update();
+    document.addEventListener('fullscreenchange', update);
+    return () => document.removeEventListener('fullscreenchange', update);
+  }, []);
+
+  const enterImmersiveFullscreen = useCallback(async () => {
+    const el = document.documentElement;
+    const anyEl = el as any;
+    try {
+      if (el.requestFullscreen) {
+        // navigationUI is supported in some browsers; safe to pass as any.
+        await (el.requestFullscreen as any)({ navigationUI: 'hide' });
+        return;
+      }
+      if (anyEl.webkitRequestFullscreen) {
+        anyEl.webkitRequestFullscreen();
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to enter immersive fullscreen:', e);
+    }
+  }, []);
+
+  const exitImmersiveFullscreen = useCallback(async () => {
+    const anyDoc = document as any;
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (anyDoc.webkitExitFullscreen) {
+        anyDoc.webkitExitFullscreen();
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to exit immersive fullscreen:', e);
+    }
+  }, []);
 
   const t = (key: keyof typeof TEXT['en']) => TEXT[lang][key] || key;
 
@@ -525,14 +577,30 @@ export default function App() {
              <GlassCard className="w-64 bg-white/95 shadow-3xl rounded-[40px] p-10 flex flex-col items-center gap-8 relative">
                 <button onClick={() => setIsSettingsOpen(false)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-slate-600 transition-colors"><X size={24} /></button>
                 <div className="text-center flex flex-col items-center gap-6">
-                  <button 
-                    onClick={exportToJSON}
-                    className="w-24 h-24 rounded-[32px] bg-slate-100 text-slate-900 shadow-2xl shadow-slate-200 flex items-center justify-center active:scale-90 transition-all hover:bg-slate-200"
-                    aria-label="Export"
-                    title="Export"
-                  >
-                    <Download size={40} strokeWidth={2.5} />
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={exportToJSON}
+                      className="w-24 h-24 rounded-[32px] bg-slate-100 text-slate-900 shadow-2xl shadow-slate-200 flex items-center justify-center active:scale-90 transition-all hover:bg-slate-200"
+                      aria-label="Export"
+                      title="Export"
+                    >
+                      <Download size={40} strokeWidth={2.5} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => (isImmersiveFullscreen ? exitImmersiveFullscreen() : enterImmersiveFullscreen())}
+                      className="w-24 h-24 rounded-[32px] bg-slate-100 text-slate-900 shadow-2xl shadow-slate-200 flex items-center justify-center active:scale-90 transition-all hover:bg-slate-200"
+                      aria-label={isImmersiveFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                      title={isImmersiveFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                    >
+                      {isImmersiveFullscreen ? (
+                        <Minimize2 size={40} strokeWidth={2.5} />
+                      ) : (
+                        <Maximize2 size={40} strokeWidth={2.5} />
+                      )}
+                    </button>
+                  </div>
 
                   {/* Language toggle: no-text design, only show En / 中 */}
                   <div
