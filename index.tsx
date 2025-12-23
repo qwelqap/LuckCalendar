@@ -3,7 +3,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { enableAutoHideBrowserBar } from './pwaUtils';
+// NOTE:
+// We intentionally do NOT auto-collapse the mobile browser address bar by default.
+// Users asked to keep the phone top/bottom bars visible unless they explicitly
+// enter immersive fullscreen via the Settings toggle.
 
 const hidePwaSplash = () => {
   const el = document.getElementById('pwa-splash');
@@ -35,9 +38,6 @@ root.render(
 
 // Hide the HTML splash as soon as React is mounted.
 hidePwaSplash();
-
-// Best-effort: auto-collapse mobile browser address bar (no-op in standalone PWA)
-enableAutoHideBrowserBar();
 
 // Register Service Worker for PWA (production only)
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

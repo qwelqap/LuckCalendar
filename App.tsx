@@ -26,7 +26,6 @@ import { Entry, EntryType, Lang, Page } from './types';
 import { TEXT } from './constants';
 import { GlassCard } from './components/GlassCard';
 import { Heatmap } from './components/Heatmap';
-import { isStandalonePwa } from './pwaUtils';
 import { 
   initDB, 
   getAllEntries, 
@@ -41,22 +40,7 @@ export default function App() {
   const [isLoadingEntries, setIsLoadingEntries] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
   const [isImmersiveFullscreen, setIsImmersiveFullscreen] = useState(false);
-  const [autoImmersiveFullscreen, setAutoImmersiveFullscreen] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('autoImmersiveFullscreen');
-      if (saved === 'true') return true;
-      if (saved === 'false') return false;
 
-      // Default behavior:
-      // - Android + installed PWA: enable (we'll request fullscreen on the first user tap)
-      // - Otherwise: disable (avoid surprising desktop/web behavior)
-      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      const isAndroid = /Android/i.test(ua);
-      return isAndroid && isStandalonePwa();
-    } catch {
-      return false;
-    }
-  });
 
   // Initialize database and load entries on mount
   useEffect(() => {
@@ -142,40 +126,6 @@ export default function App() {
       console.warn('Failed to exit immersive fullscreen:', e);
     }
   }, []);
-
-  // Persist auto-fullscreen preference.
-  useEffect(() => {
-    try {
-      localStorage.setItem('autoImmersiveFullscreen', autoImmersiveFullscreen ? 'true' : 'false');
-    } catch {
-      // ignore
-    }
-  }, [autoImmersiveFullscreen]);
-
-  // Best-effort "auto" immersive fullscreen:
-  // Browsers do NOT allow entering fullscreen without a user gesture.
-  // So we register a one-time listener and enter fullscreen on the first tap.
-  useEffect(() => {
-    if (!autoImmersiveFullscreen) return;
-    if (isImmersiveFullscreen) return;
-
-    // If Fullscreen API isn't available, do nothing.
-    const canFullscreen =
-      typeof document !== 'undefined' &&
-      (document.fullscreenEnabled || (document.documentElement as any)?.webkitRequestFullscreen);
-    if (!canFullscreen) return;
-
-    const onFirstUserGesture = async () => {
-      // Try once; if it fails, we won't spam.
-      await enterImmersiveFullscreen();
-    };
-
-    // Capture ensures we get the very first user interaction.
-    window.addEventListener('pointerdown', onFirstUserGesture, { once: true, capture: true, passive: true });
-    return () => {
-      window.removeEventListener('pointerdown', onFirstUserGesture as any, { capture: true } as any);
-    };
-  }, [autoImmersiveFullscreen, isImmersiveFullscreen, enterImmersiveFullscreen]);
 
   const t = (key: keyof typeof TEXT['en']) => TEXT[lang][key] || key;
 
@@ -489,7 +439,9 @@ export default function App() {
           <div
             className="flex-1 min-h-0 flex flex-col p-6 overflow-y-auto z-10 animate-slide-in-right bg-[#f2f2f7] hide-scrollbar pb-32"
             style={{
-              paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
+              // Keep only the true safe-area inset so the header sits close to the top.
+              // (Previously we added an extra 1.5rem, which felt too "padded" on mobile.)
+              paddingTop: 'max(env(safe-area-inset-top), 0px)',
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 8rem)'
             }}
           >
@@ -559,7 +511,8 @@ export default function App() {
           <div
             className="flex-1 h-full flex flex-col p-6 bg-[#f2f2f7] relative z-10 animate-slide-in-right overflow-hidden"
             style={{
-              paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
+              // Same top spacing behavior as Page 2.
+              paddingTop: 'max(env(safe-area-inset-top), 0px)',
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)'
             }}
           >
@@ -652,18 +605,6 @@ export default function App() {
                       )}
                     </button>
                   </div>
-
-                  {/* Auto immersive fullscreen: enters on first tap after launch (required by browser policy). */}
-                  <button
-                    type="button"
-                    onClick={() => setAutoImmersiveFullscreen(v => !v)}
-                    className={`w-full h-12 rounded-full px-4 flex items-center justify-between border transition-all ${autoImmersiveFullscreen ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'}`}
-                    aria-pressed={autoImmersiveFullscreen}
-                    title="Auto Fullscreen"
-                  >
-                    <span className="text-xs font-black uppercase tracking-[0.2em]">Auto Fullscreen</span>
-                    <span className={`text-xs font-black ${autoImmersiveFullscreen ? 'text-emerald-700' : 'text-slate-400'}`}>{autoImmersiveFullscreen ? 'On' : 'Off'}</span>
-                  </button>
 
                   {/* Language toggle: no-text design, only show En / 中 */}
                   <div
