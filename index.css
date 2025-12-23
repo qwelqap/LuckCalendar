@@ -24,11 +24,8 @@ body {
   padding: 0;
   background-color: #ffffff;
   overscroll-behavior-y: none;
-  /* Ensure content extends into status bar */
-  position: fixed;
+  /* Let the app size naturally; avoid locking the page which can break mobile viewport and scrolling */
   width: 100%;
-  height: 100%;
-  overflow: hidden;
 }
 
 /* Prevent any default body spacing / highlight from showing as strips */
