@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 export const TEXT = {
   zh: {
     lucky_title: "好运",

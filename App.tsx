@@ -192,14 +192,16 @@ export default function App() {
     };
 
     if (editingId) {
-      setEntries(prev => prev.map(item => item.id === editingId ? { ...item, ...entryData } : item));
+      // Find the existing entry before updating state
+      const existingEntry = entries.find(e => e.id === editingId);
+      
+      if (existingEntry) {
+        const updated: Entry = { ...existingEntry, ...entryData };
+        
+        // Update state
+        setEntries(prev => prev.map(item => item.id === editingId ? updated : item));
 
-      // Persist updated entry (compute from current state)
-      const updated: Entry | undefined = entries.find(e => e.id === editingId)
-        ? ({ ...(entries.find(e => e.id === editingId) as Entry), ...entryData } as Entry)
-        : undefined;
-
-      if (updated) {
+        // Persist updated entry
         try {
           await saveEntryToDB(updated);
         } catch (error) {
@@ -309,14 +311,15 @@ export default function App() {
     <div
       className="w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-stretch p-0 md:p-4"
       style={{
-        height: 'calc(var(--app-vh, 1vh) * 100)',
-        minHeight: 'calc(var(--app-vh, 1vh) * 100)'
+        height: '100dvh',
+        minHeight: '100dvh'
       }}
     >
       {/**
        * PWA edge-to-edge safe-area handling:
        * - Do NOT pad the outermost shell, otherwise you create visible "white strips" in safe areas.
        * - Instead, let page backgrounds bleed to the edges, and add safe-area padding only to UI content.
+       * - Background extends into safe areas for seamless gesture bar integration
        */}
       <div 
         className="w-full md:max-w-md h-[100dvh] md:h-[850px] bg-white md:rounded-[44px] shadow-none md:shadow-2xl border-none md:border-[8px] md:border-slate-900/5 relative overflow-hidden flex flex-col"
@@ -411,7 +414,7 @@ export default function App() {
             <div className="grid grid-cols-2 gap-2 mb-3">
                 <GlassCard className="p-4 flex flex-col justify-center h-24 bg-gradient-to-br from-white to-emerald-50 border-emerald-50">
                     <div className="text-lg font-semibold text-emerald-600 leading-tight mb-1 line-clamp-2">{insightStats.topLucky.name}</div>
-                    <div className="text-[10px] font-boldnormal text-emerald-400 uppercase tracking-widest">{t('mentioned' as any)}: {insightStats.topLucky.count}</div>
+                    <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">{t('mentioned' as any)}: {insightStats.topLucky.count}</div>
                 </GlassCard>
                  <GlassCard className="p-4 flex flex-col justify-center h-24 bg-gradient-to-br from-white to-rose-50 border-rose-50">
                     <div className="text-lg font-semibold text-rose-600 leading-tight mb-1 line-clamp-2">{insightStats.topUnlucky.name}</div>
