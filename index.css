@@ -6,10 +6,52 @@
   color-scheme: light;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/*
+  Full-screen / gesture-navigation safe areas:
+  - Prevent white strip under iOS status bar (viewport-fit=cover is already set)
+  - Prevent black strip around Android gesture bar by extending app background
+*/
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f2f2f7;
+  overscroll-behavior-y: none;
+}
+
+/* Prefer stable dynamic viewport units when available */
+@supports (height: 100dvh) {
+  #root {
+    min-height: 100dvh;
+  }
+}
+
+/* Utility: apply safe-area padding where needed (typically the full-screen app shell). */
+.safe-area-padding {
+  padding-top: constant(safe-area-inset-top);
+  padding-right: constant(safe-area-inset-right);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-left: constant(safe-area-inset-left);
+
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+#root {
+  background-color: #f2f2f7;
+}
+
 body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
     "Segoe UI Emoji";
-  background-color: #f2f2f7;
 }
 
 /*

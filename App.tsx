@@ -297,7 +297,7 @@ export default function App() {
   }, [currentMonthEntries, entries]);
 
   return (
-    <div className="w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-center p-0 md:p-4" style={{ minHeight: 'calc(var(--app-vh, 1vh) * 100)' }}>
+    <div className="safe-area-padding w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-center p-0 md:p-4" style={{ minHeight: 'calc(var(--app-vh, 1vh) * 100)' }}>
       <div 
         className="w-full md:max-w-md h-[100dvh] md:h-[850px] bg-white md:rounded-[44px] shadow-none md:shadow-2xl border-none md:border-[8px] md:border-slate-900/5 relative overflow-hidden flex flex-col"
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}

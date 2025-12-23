@@ -1,12 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LuckCalendar">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#10b981"/>
-      <stop offset="1" stop-color="#6366f1"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="120" fill="url(#g)"/>
-  <circle cx="256" cy="210" r="86" fill="#ffffff" fill-opacity="0.92"/>
-  <path d="M132 398c26-78 92-124 124-124s98 46 124 124" fill="#ffffff" fill-opacity="0.88"/>
-  <path d="M184 212c18 22 42 34 72 34s54-12 72-34" fill="none" stroke="#111827" stroke-opacity="0.35" stroke-width="18" stroke-linecap="round"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 800 800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g id="图层1">
+        <path d="M166.412,157.56C149.339,192.523 117.649,268.476 135.66,423.37C153.801,579.381 276.554,649.457 358.392,663.013C391.416,668.483 516.222,691.765 603.729,641.257C662.36,607.415 670.716,537.32 595.414,519.612C509.738,499.465 398.65,598.389 332.991,514.403C287.147,455.761 312.699,377.337 301.863,255.319C288.653,106.559 154.358,14.511 149.113,169.226" style="fill:none;stroke:rgb(0,238,255);stroke-width:25.2px;"/>
+    </g>
+    <g id="图层2">
+        <path d="M356.49,149.359C358.326,164.048 373.118,344.129 439.591,377.968C447.489,381.989 550.689,417.698 607.888,376.975C667.757,334.351 697.691,235.232 676.405,149.331" style="fill:none;stroke:rgb(0,238,255);stroke-width:25.2px;"/>
+        <path d="M710.763,382.414C659.994,385.181 640.559,427.487 648.467,459.249C663.072,517.904 723.967,488.111 725.855,487.421" style="fill:none;stroke:rgb(0,238,255);stroke-width:25.2px;"/>
+        <path d="M702.104,566.405C704.133,658.635 709.379,658.032 709.439,749.855" style="fill:none;stroke:rgb(0,238,255);stroke-width:25.2px;"/>
+        <path d="M774.258,608.976C763.134,625.105 765.75,627.333 725.845,665.278" style="fill:none;stroke:rgb(0,238,255);stroke-width:25.2px;"/>
+        <path d="M714.37,683.294C764.804,704.376 764.856,704.521 824.901,748.593" style="fill:none;stroke:rgb(0,238,255);stroke-width:25.2px;"/>
+    </g>
 </svg>
