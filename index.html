@@ -3,17 +3,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <!-- Theme color affects Android status bar coloring in PWA. -->
     <meta name="theme-color" content="#10b981" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#10b981" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10b981" />
     <meta name="description" content="A comprehensive luck tracking and fortune prediction application" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="LuckTracker" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="LuckCalendar" />
     <link rel="icon" type="image/x-icon" href="/LuckTracker.ico" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <title>LuckTracker</title>
+    <title>LuckCalendar</title>
     <!--
       Minimal “first paint” splash (before React + CSS bundle loads).
       Note: OS-level PWA launch screens may still show the app icon briefly;
@@ -55,7 +58,7 @@
   <body>
     <div id="pwa-splash" role="status" aria-live="polite" aria-label="Loading">
       <div class="pwa-splash-card">
-        <div class="pwa-splash-title">LuckTracker</div>
+        <div class="pwa-splash-title">LuckCalendar</div>
       </div>
     </div>
     <div id="root"></div>

@@ -23,11 +23,20 @@ body {
   padding: 0;
   background-color: #f2f2f7;
   overscroll-behavior-y: none;
+  /* 确保内容延伸到屏幕边缘，消除黑边 */
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  position: relative;
 }
 
 /* Prevent any default body spacing / highlight from showing as strips */
 body {
   -webkit-tap-highlight-color: transparent;
+  /* Android 全面屏优化 */
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
 }
 
 /* Prefer stable dynamic viewport units when available */
@@ -50,8 +59,48 @@ body {
   padding-left: env(safe-area-inset-left);
 }
 
+/* 确保底部内容不被手势栏遮挡 */
+.safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 为全面屏优化的底部间距 */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 2rem);
+}
+
+/* 全面屏手势栏融合优化 */
+@supports (padding: max(0px)) {
+  body {
+    /* 使用 max() 确保至少有安全区域的内边距 */
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+  
+  #root {
+    /* 底部使用 max() 确保内容不被手势栏遮挡 */
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* 针对 iOS 的额外优化 */
+@supports (-webkit-touch-callout: none) {
+  body {
+    /* iOS Safari 特定优化 */
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 #root {
   background-color: #f2f2f7;
+  /* 确保根元素完全填充并延伸到安全区域 */
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  position: relative;
+  /* 为底部手势栏添加安全区域内边距 */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 body {
@@ -93,12 +142,10 @@ body {
   from {
     opacity: 0;
 
-  /* Remove default safe-area padding/margins and ensure the app can truly bleed edge-to-edge */
-  body {
-    min-height: 100vh;
-  }
-
   /* Prefer stable dynamic viewport units when available */
+  html,
+  body,
+  #root {
     transform: translateY(20px);
   }
   to {
