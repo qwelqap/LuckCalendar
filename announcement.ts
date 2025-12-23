@@ -27,13 +27,15 @@ export const ANNOUNCEMENT: Announcement = {
     zh: {
       title: '公告',
       lines: [
-        '手机请点击浏览器自带的“分享”按钮，然后选择“添加到主屏幕”以安装 PWA 应用，获得更佳体验。'
+        '手机请点击浏览器自带的“分享”按钮，然后选择“添加到主屏幕”以安装 PWA 应用，获得更佳体验。',
+        'https://github.com/qwelqap/LuckCalendar'
       ]
     },
     en: {
       title: 'Announcement',
       lines: [
-        'For a better experience, please click the "Share" button in your browser and then "Add to Home Screen" to install the PWA application.'
+        'For a better experience, please click the "Share" button in your browser and then "Add to Home Screen" to install the PWA application.',
+        'https://github.com/qwelqap/LuckCalendar'
       ]
     }
   }
