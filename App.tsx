@@ -62,6 +62,15 @@ export default function App() {
     setLang(browserLang.includes('zh') ? 'zh' : 'en');
   }, []);
 
+  // Dynamically adjust theme-color so the installed PWA status bar matches the current page.
+  // (Android uses this for status bar tint; iOS standalone mostly relies on apple status bar settings.)
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const color = page === 1 ? '#10b981' : '#f2f2f7';
+    meta.setAttribute('content', color);
+  }, [page]);
+
   const t = (key: keyof typeof TEXT['en']) => TEXT[lang][key] || key;
 
   // --- State for Modal / Entry ---
@@ -297,7 +306,18 @@ export default function App() {
   }, [currentMonthEntries, entries]);
 
   return (
-    <div className="safe-area-padding w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-center p-0 md:p-4" style={{ minHeight: 'calc(var(--app-vh, 1vh) * 100)' }}>
+    <div
+      className="w-full bg-[#f2f2f7] text-slate-900 font-sans selection:bg-indigo-100 flex justify-center items-stretch p-0 md:p-4"
+      style={{
+        height: 'calc(var(--app-vh, 1vh) * 100)',
+        minHeight: 'calc(var(--app-vh, 1vh) * 100)'
+      }}
+    >
+      {/**
+       * PWA edge-to-edge safe-area handling:
+       * - Do NOT pad the outermost shell, otherwise you create visible "white strips" in safe areas.
+       * - Instead, let page backgrounds bleed to the edges, and add safe-area padding only to UI content.
+       */}
       <div 
         className="w-full md:max-w-md h-[100dvh] md:h-[850px] bg-white md:rounded-[44px] shadow-none md:shadow-2xl border-none md:border-[8px] md:border-slate-900/5 relative overflow-hidden flex flex-col"
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
@@ -357,8 +377,14 @@ export default function App() {
 
         {/* --- Page 2: Dashboard --- */}
         {page === 2 && (
-          <div className="flex-1 min-h-0 flex flex-col p-6 overflow-y-auto z-10 animate-slide-in-right bg-[#f2f2f7] hide-scrollbar pb-32">
-            <header className="mb-3 mt-4 flex items-start">
+          <div
+            className="flex-1 min-h-0 flex flex-col p-6 overflow-y-auto z-10 animate-slide-in-right bg-[#f2f2f7] hide-scrollbar pb-32"
+            style={{
+              paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 8rem)'
+            }}
+          >
+            <header className="mb-3 flex items-start">
               <div>
                 <div className="text-xs font-bold text-slate-400 mb-0.1 uppercase tracking-[0.2em]">{new Date().getFullYear()}</div>
                 <h2 className="text-[28px] font-extrabold text-slate-700 tracking-tight">{new Date().toLocaleString('en-US', { month: 'long' })}</h2>
@@ -409,7 +435,7 @@ export default function App() {
               </div>
             </GlassCard>
 
-            <div className="absolute bottom-10 left-0 w-full px-8 flex justify-center z-20 pointer-events-none">
+            <div className="absolute left-0 w-full px-8 flex justify-center z-20 pointer-events-none" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 2.5rem)' }}>
                 <div className="flex gap-4 pointer-events-auto bg-white/90 backdrop-blur-xl p-2 rounded-full shadow-2xl border border-white/50">
                     <button onClick={() => setPage(1)} className="p-4 rounded-full text-slate-300 hover:text-slate-900 transition-all"><Home size={24} /></button>
                     <div className="w-[1px] bg-slate-200 my-2"></div>
@@ -421,8 +447,14 @@ export default function App() {
 
         {/* --- Page 3: History --- */}
         {page === 3 && (
-          <div className="flex-1 h-full flex flex-col p-6 bg-[#f2f2f7] relative z-10 animate-slide-in-right overflow-hidden">
-             <header className="mb-6 mt-4 flex justify-between items-end flex-shrink-0">
+          <div
+            className="flex-1 h-full flex flex-col p-6 bg-[#f2f2f7] relative z-10 animate-slide-in-right overflow-hidden"
+            style={{
+              paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)'
+            }}
+          >
+             <header className="mb-6 flex justify-between items-end flex-shrink-0">
                <div>
                  <div className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-widest">{t('archives' as any)}</div>
                  <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">{currentViewMonth || "Logs"}</h2>
@@ -470,7 +502,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="absolute bottom-10 left-0 w-full px-8 flex justify-center z-20 pointer-events-none">
+            <div className="absolute left-0 w-full px-8 flex justify-center z-20 pointer-events-none" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 2.5rem)' }}>
                 <div className="flex gap-4 pointer-events-auto bg-white/90 backdrop-blur-xl p-2 rounded-full shadow-2xl border border-white/50">
                     <button onClick={() => setPage(2)} className="p-4 rounded-full text-slate-300 hover:text-slate-900 transition-all"><ChevronLeft size={24} /></button>
                     <div className="w-[1px] bg-slate-200 my-2"></div>

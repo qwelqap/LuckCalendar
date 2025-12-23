@@ -25,6 +25,11 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Prevent any default body spacing / highlight from showing as strips */
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Prefer stable dynamic viewport units when available */
 @supports (height: 100dvh) {
   #root {
@@ -87,6 +92,13 @@ body {
 @keyframes fade-in-up {
   from {
     opacity: 0;
+
+  /* Remove default safe-area padding/margins and ensure the app can truly bleed edge-to-edge */
+  body {
+    min-height: 100vh;
+  }
+
+  /* Prefer stable dynamic viewport units when available */
     transform: translateY(20px);
   }
   to {

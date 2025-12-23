@@ -5,6 +5,22 @@ import App from './App';
 import './index.css';
 import { enableAutoHideBrowserBar } from './pwaUtils';
 
+const hidePwaSplash = () => {
+  const el = document.getElementById('pwa-splash');
+  if (!el) return;
+
+  // Smoothly fade out, then remove from DOM.
+  el.style.transition = 'opacity 220ms ease';
+  el.style.opacity = '0';
+  window.setTimeout(() => {
+    try {
+      el.remove();
+    } catch {
+      // ignore
+    }
+  }, 260);
+};
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
@@ -16,6 +32,9 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Hide the HTML splash as soon as React is mounted.
+hidePwaSplash();
 
 // Best-effort: auto-collapse mobile browser address bar (no-op in standalone PWA)
 enableAutoHideBrowserBar();
