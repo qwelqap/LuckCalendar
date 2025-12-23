@@ -67,7 +67,9 @@ export default function App() {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) return;
-    const color = page === 1 ? '#10b981' : '#f2f2f7';
+    // Page 1: light green (home)
+    // Page 2/3: white
+    const color = page === 1 ? '#10b981' : '#ffffff';
     meta.setAttribute('content', color);
   }, [page]);
 
