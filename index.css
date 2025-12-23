@@ -16,6 +16,7 @@ body,
   Full-screen / gesture-navigation safe areas:
   - Prevent white strip under iOS status bar (viewport-fit=cover is already set)
   - Prevent black strip around Android gesture bar by extending app background
+  - Allow content to extend into status bar area
 */
 html,
 body {
@@ -23,6 +24,11 @@ body {
   padding: 0;
   background-color: #f2f2f7;
   overscroll-behavior-y: none;
+  /* Ensure content extends into status bar */
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Prevent any default body spacing / highlight from showing as strips */
@@ -34,6 +40,9 @@ body {
 @supports (height: 100dvh) {
   #root {
     min-height: 100dvh;
+    /* Ensure root extends into safe areas */
+    position: relative;
+    overflow: hidden;
   }
 }
 
@@ -60,6 +69,22 @@ body {
 .safe-area-bottom-fixed {
   bottom: constant(safe-area-inset-bottom);
   bottom: env(safe-area-inset-bottom);
+}
+
+/* Allow content to extend into status bar area while keeping text visible */
+.extend-to-status-bar {
+  /* Remove top padding to allow content to extend into status bar */
+  padding-top: 0 !important;
+  /* Ensure content starts from the very top */
+  margin-top: 0 !important;
+}
+
+/* Add padding only to interactive content to avoid overlap with status bar */
+.status-bar-safe {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+  /* Minimum padding for devices without notch */
+  padding-top: max(env(safe-area-inset-top), 0px);
 }
 
 #root {
