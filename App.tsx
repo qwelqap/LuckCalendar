@@ -97,9 +97,12 @@ export default function App() {
   // Initialize database and load entries on mount
   useEffect(() => {
     const loadEntries = async () => {
+      console.log('[App] Starting to load entries...');
       try {
         await initDB();
+        console.log('[App] DB initialized');
         const loadedEntries = await getAllEntries();
+        console.log('[App] Entries loaded:', loadedEntries.length);
 
         // Migration: convert previously stored translated category labels into stable keys.
         const migratedEntries = loadedEntries.map(e => {
@@ -116,8 +119,9 @@ export default function App() {
           });
         }
       } catch (error) {
-        console.error('Failed to load entries from IndexedDB:', error);
+        console.error('[App] Failed to load entries from IndexedDB:', error);
       } finally {
+        console.log('[App] Setting isLoadingEntries to false');
         setIsLoadingEntries(false);
       }
     };
@@ -134,9 +138,12 @@ export default function App() {
 
   // Show announcement once per version (for both web and installed PWA)
   useEffect(() => {
+    console.log('[App] Checking announcement version...');
     try {
       const seenVersion = localStorage.getItem(ANNOUNCEMENT_SEEN_KEY);
+      console.log('[App] Seen version:', seenVersion, 'Current version:', ANNOUNCEMENT.version);
       if (seenVersion !== ANNOUNCEMENT.version) {
+        console.log('[App] Showing announcement');
         setIsAnnouncementOpen(true);
       }
     } catch (e) {

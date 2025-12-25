@@ -3,6 +3,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { registerSW } from 'virtual:pwa-register';
+
 // NOTE:
 // We intentionally do NOT auto-collapse the mobile browser address bar by default.
 // Users asked to keep the phone top/bottom bars visible unless they explicitly
@@ -39,31 +41,16 @@ root.render(
 // Hide the HTML splash as soon as React is mounted.
 hidePwaSplash();
 
-// Register Service Worker for PWA (production only)
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-
-      // If there's an updated SW waiting, activate it ASAP.
-      if (registration.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-
-      // When a new SW is installed, prompt activation.
-      registration.addEventListener('updatefound', () => {
-        const installing = registration.installing;
-        if (!installing) return;
-        installing.addEventListener('statechange', () => {
-          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-            registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      });
-
-      console.log('Service Worker registered:', registration);
-    } catch (error) {
-      console.log('Service Worker registration failed:', error);
+// Register Service Worker for PWA
+registerSW({
+  onNeedRefresh() {
+    // In autoUpdate mode, this might not be called if we don't handle it,
+    // but we can keep it for manual refresh if we change the strategy later.
+    if (confirm('New content available. Reload?')) {
+      window.location.reload();
     }
-  });
-}
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline');
+  },
+});
